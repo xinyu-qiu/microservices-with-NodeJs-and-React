@@ -16,7 +16,7 @@ app.get('/posts', (req, res) => {
     res.send(posts);
 });
 
-app.post('/posts', async (req, res) => {
+app.post('/posts/create', async (req, res) => {
     //generate a random id in hex decimal
     const id = randomBytes(4).toString('hex');
     const { title } = req.body;
@@ -42,6 +42,6 @@ app.post('/events', (req, res) => {
 });
 
 app.listen(4000, () => {
-    console.log("v60");
+    console.log("v10");
     console.log('Listening on 4000');
 });
