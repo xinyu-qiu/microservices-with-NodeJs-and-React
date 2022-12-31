@@ -1,9 +1,10 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
-import { validationRequest, NotFoundError, requireAuth, NotAuthorizedError } from '@tickets-xinyu/common';
+import { validationRequest, NotFoundError, requireAuth, NotAuthorizedError, BadRequestError } from '@tickets-xinyu/common';
 import { Ticket } from '../models/ticket';
 import { TicketCreatedPublisher } from '../events/publishers/ticket-created-publisher';
 import { natsWrapper } from '../nats-wrapper';
+import { TicketUpdatedPublisher } from '../events/publishers/ticket-updated-publisher';
 
 const router = express.Router();
 
@@ -23,6 +24,9 @@ router.put(
     if (!ticket) {
       throw new NotFoundError();
     }
+    if (ticket.orderId) {
+      throw new BadRequestError('Ticket is reserved');
+    }
     if (ticket.userId !== req.currentUser!.id) {
       throw new NotAuthorizedError();
     }
@@ -32,8 +36,9 @@ router.put(
       price: req.body.price
     });
     await ticket.save();
-    new TicketCreatedPublisher(natsWrapper.client).publish({
+    new TicketUpdatedPublisher(natsWrapper.client).publish({
       id: ticket.id,
+      version: ticket.version,
       title: ticket.title,
       price: ticket.price,
       userId: ticket.userId
